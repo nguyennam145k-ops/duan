@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pac-Man game</title>
+    
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const titleSize = 40;//khoảng cách ô
+        const map=[[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                   [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                   [1,0,1,1,0,1,0,1,1,1,0,1,0,1,1,0,1],
+                   [1,0,1,0,0,0,0,0,4,0,0,0,0,0,1,0,1],
+                   [1,0,1,0,1,1,1,1,0,1,1,1,1,0,1,0,1],
+                   [1,0,0,0,0,0,0,0,4,0,0,0,0,0,0,0,1],
+                   [1,0,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1],
+                   [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                   [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]];
+        //lưu vị trí ban đầu của PacMan
+        let pacmanRow=7;
+        let pacmanCol=8;
+        //miệng pacman
+        let mouthStart = 0.25*Math.PI;
+        let mouthEnd =  1.75*Math.PI;
+        //điểm
+        let score=0;
+        function DrawMap(){
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            for(let row=0;row<map.length;row++){//dòng
+                for(let col=0;col<map[row].length;col++){//cột
+                    const title=map[row][col];
+                    const x=col*titleSize;
+                    const y=row*titleSize;
+                    if(title===1){//tường
+                        ctx.fillStyle = "black";
+                        ctx.fillRect(x,y,titleSize,titleSize);
+                    }
+                    else if(title===0){// food
+                        ctx.fillStyle="yellow";
+                        ctx.beginPath();
+                        ctx.arc(x+titleSize/2,y+titleSize/2,
+                            titleSize/8,0,Math.PI*2
+                        );
+                        ctx.fill();
+                    }else if(title===2){
+
+                    }
+
+                    else if(title===4){//  2ma                       
+                        ctx.fillStyle= "pink";                        
+                        ctx.beginPath();
+                        ctx.arc(x+titleSize/2,
+                                y+titleSize/2,
+                                10,
+                                0,
+                                Math.PI*2);
+                        ctx.fill();
+                    }    
+                }
+
+            }
+             ctx.fillStyle="red";//pacman
+                        ctx.beginPath();
+                        ctx.arc(pacmanCol*titleSize+titleSize/2,
+                                pacmanRow*titleSize+titleSize/2,
+                                15,
+                                mouthStart,
+                                mouthEnd);
+                        ctx.lineTo(pacmanCol*titleSize+titleSize/2,
+                                    pacmanRow*titleSize+titleSize/2,
+                        );
+                        ctx.fill();
+                        //điểm
+            ctx.fillStyle="blue";
+            ctx.font= "20px Arial";
+            ctx.fillText("Điểm:"+score,10,25);
+        }
+        DrawMap();
+        document.addEventListener('keydown',function(e){
+            if(e.key=="ArrowUp"||e.key==="w"||e.key==="W"){
+                direction = "up";
+                mouthStart = 1.75*Math.PI;
+                 mouthEnd =  1.25*Math.PI;
+                
+            }else if(e.key=="ArrowDown"||e.key==="s"||e.key==="S"){
+                direction = "down";
+                 mouthStart = 0.75*Math.PI;
+                 mouthEnd =  0.25*Math.PI;
+            }else if(e.key=="ArrowLeft"||e.key==="a"||e.key==="A"){
+                direction = "left";
+                mouthStart = 1.25*Math.PI;
+                 mouthEnd =  0.75*Math.PI;
+                 
+            }else if(e.key=="ArrowRight"||e.key==="d"||e.key==="D"){
+                
+                direction = "right";
+                 mouthStart = 0.25*Math.PI;
+                 mouthEnd =  1.75*Math.PI;
+            }
+        });
+
+        let direction = "right";
+        
+        function movePacman(newRow, newCol){
+            if(newRow >=0 &&
+                newRow<map.length &&
+                newCol>=0 &&
+                newCol<map[0].length &&
+                map[newRow][newCol]!==1
+            ){
+                pacmanCol=newCol;
+                pacmanRow=newRow;
+            }
+             if(map[pacmanRow][pacmanCol]===0){//ăn food
+                map[pacmanRow][pacmanCol]=2;
+                score+=10;
+
+            }
+            
+            DrawMap();
+        }
+        function autoMove(){
+            let newCol=pacmanCol;
+            let newRow=pacmanRow;
+            
+            if(direction === "up"){
+                newRow--;
+            }else if(direction === "down"){
+                newRow++;
+            }else if(direction === "left"){
+                newCol--;
+            }else if(direction === "right"){
+                newCol++;
+            }
+            movePacman(newRow,newCol);
+        }setInterval(autoMove,300);
+    </script>
+</body>
+</html>

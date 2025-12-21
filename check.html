@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pac-Man Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #22c2da 100vh, #40d940 100%);
+            font-family: 'Arial', sans-serif;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        #gameContainer {
+            text-align: center;
+        }
+
+        #score {
+            color: #fff;
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-shadow: 0 0 10px rgba(255, 255, 0, 0.5);
+        }
+
+        canvas {
+            border: 4px solid #0f3460;
+            background: #000;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+            display: block;
+            margin: 0 auto;
+        }
+
+        #controls {
+            color: #fff;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+
+        #gameOver {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            border: 3px solid #ffd700;
+        }
+
+        #gameOver h2 {
+            color: #ffd700;
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        }
+
+        #gameOver p {
+            color: #fff;
+            font-size: 24px;
+            margin-bottom: 30px;
+        }
+
+        #restartBtn {
+            background: #ffd700;
+            color: #000;
+            border: none;
+            padding: 15px 40px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        #restartBtn:hover {
+            background: #ffed4e;
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="score">Điểm: 0</div>
+        <canvas id="gameCanvas"></canvas>
+        <div id="controls">
+            Điều khiển: Phím mũi tên ← ↑ → ↓ hoặc WASD
+        </div>
+    </div>
+
+    <div id="gameOver">
+        <h2>GAME OVER</h2>
+        <p>Điểm của bạn: <span id="finalScore">0</span></p>
+        <button id="restartBtn">Chơi lại</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('score');
+        const gameOverDiv = document.getElementById('gameOver');
+        const finalScoreSpan = document.getElementById('finalScore');
+        const restartBtn = document.getElementById('restartBtn');
+
+        const CELL = 20;
+        const COLS = 28;
+        const ROWS = 31;
+        canvas.width = COLS * CELL;
+        canvas.height = ROWS * CELL;
+
+        // Map của game (1 = tường, 0 = đường đi, 2 = điểm lớn)
+        const map = [
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
+            [1,2,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,2,1],
+            [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,0,1],
+            [1,0,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,0,1],
+            [1,0,0,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,0,1],
+            [1,1,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1],
+            [1,1,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1],
+            [1,1,1,1,1,1,0,1,1,0,0,0,0,0,0,0,0,0,0,1,1,0,1,1,1,1,1,1],
+            [1,1,1,1,1,1,0,1,1,0,1,1,1,3,3,1,1,1,0,1,1,0,1,1,1,1,1,1],
+            [1,1,1,1,1,1,0,1,1,0,1,3,3,3,3,3,3,1,0,1,1,0,1,1,1,1,1,1],
+            [0,0,0,0,0,0,0,0,0,0,1,3,3,3,3,3,3,1,0,0,0,0,0,0,0,0,0,0],
+            [1,1,1,1,1,1,0,1,1,0,1,3,3,3,3,3,3,1,0,1,1,0,1,1,1,1,1,1],
+            [1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1],
+            [1,1,1,1,1,1,0,1,1,0,0,0,0,0,0,0,0,0,0,1,1,0,1,1,1,1,1,1],
+            [1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1],
+            [1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
+            [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
+            [1,2,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,2,1],
+            [1,1,1,0,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,0,1,1,1],
+            [1,1,1,0,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,0,1,1,1],
+            [1,0,0,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,0,1],
+            [1,0,1,1,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,1,1,0,1],
+            [1,0,1,1,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,1,1,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+        ];
+
+        let pacman = { x: 14, y: 23, dir: 0, nextDir: 0, mouth: 0 };
+        let ghosts = [
+            { x: 14, y: 11, dir: 0, color: '#FF0000', mode: 'scatter' },
+            { x: 12, y: 14, dir: 2, color: '#FFB8FF', mode: 'scatter' },
+            { x: 14, y: 14, dir: 0, color: '#00FFFF', mode: 'scatter' },
+            { x: 16, y: 14, dir: 1, color: '#FFB852', mode: 'scatter' }
+        ];
+        let score = 0;
+        let dots = [];
+        let powerMode = false;
+        let powerModeTimer = 0;
+        let gameRunning = true;
+        let frameCount = 0;
+        let speed = 6.5; // Tốc độ: số frame cần để di chuyển 1 ô
+
+        // Tạo các điểm trên bản đồ
+        function initDots() {
+            dots = [];
+            for (let y = 0; y < ROWS; y++) {
+                for (let x = 0; x < COLS; x++) {
+                    if (map[y][x] === 0) {
+                        dots.push({ x, y, type: 'small' });
+                    } else if (map[y][x] === 2) {
+                        dots.push({ x, y, type: 'power' });
+                    }
+                }
+            }
+        }
+
+        // Vẽ bản đồ
+        function drawMap() {
+            for (let y = 0; y < ROWS; y++) {
+                for (let x = 0; x < COLS; x++) {
+                    if (map[y][x] === 1) {
+                        ctx.fillStyle = '#2121DE';
+                        ctx.fillRect(x * CELL, y * CELL, CELL, CELL);
+                        ctx.strokeStyle = '#4444FF';
+                        ctx.strokeRect(x * CELL, y * CELL, CELL, CELL);
+                    }
+                }
+            }
+        }
+
+        // Vẽ các điểm
+        function drawDots() {
+            dots.forEach(dot => {
+                if (dot.type === 'small') {
+                    ctx.fillStyle = '#FFB8AE';
+                    ctx.beginPath();
+                    ctx.arc(dot.x * CELL + CELL/2, dot.y * CELL + CELL/2, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    ctx.fillStyle = '#FFB8AE';
+                    ctx.beginPath();
+                    ctx.arc(dot.x * CELL + CELL/2, dot.y * CELL + CELL/2, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+        }
+
+        // Vẽ Pac-Man
+        function drawPacman() {
+            ctx.fillStyle = '#FFFF00';
+            ctx.beginPath();
+            const centerX = pacman.x * CELL + CELL/2;
+            const centerY = pacman.y * CELL + CELL/2;
+            const radius = CELL/2 - 2;
+            
+            const mouthAngle = Math.abs(Math.sin(pacman.mouth)) * 0.3;
+            const startAngle = pacman.dir * Math.PI/2 + mouthAngle;
+            const endAngle = pacman.dir * Math.PI/2 + Math.PI * 2 - mouthAngle;
+            
+            ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+            ctx.lineTo(centerX, centerY);
+            ctx.fill();
+        }
+
+        // Vẽ ma
+        function drawGhost(ghost) {
+            if (powerMode) {
+                ctx.fillStyle = '#2121DE';
+            } else {
+                ctx.fillStyle = ghost.color;
+            }
+            
+            const x = ghost.x * CELL + CELL/2;
+            const y = ghost.y * CELL + CELL/2;
+            const r = CELL/2 - 2;
+            
+            ctx.beginPath();
+            ctx.arc(x, y - r/2, r, Math.PI, 0, false);
+            ctx.lineTo(x + r, y + r);
+            ctx.lineTo(x + r * 2/3, y + r/2);
+            ctx.lineTo(x + r * 1/3, y + r);
+            ctx.lineTo(x, y + r/2);
+            ctx.lineTo(x - r * 1/3, y + r);
+            ctx.lineTo(x - r * 2/3, y + r/2);
+            ctx.lineTo(x - r, y + r);
+            ctx.closePath();
+            ctx.fill();
+
+            //Mắt
+            ctx.fillStyle = '#FFF';
+            ctx.beginPath();
+            ctx.arc(x - r/3, y - r/4, r/4, 0, Math.PI * 2);
+            ctx.arc(x + r/3, y - r/4, r/4, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(x - r/3, y - r/4, r/6, 0, Math.PI * 2);
+            ctx.arc(x + r/3, y - r/4, r/6, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Kiểm tra va chạm tường
+        function canMove(x, y) {
+            if (x < 0) x = COLS - 1;
+            if (x >= COLS) x = 0;
+            if (y < 0 || y >= ROWS) return false;
+            return map[y][x] !== 1;
+        }
+
+        // Di chuyển Pac-Man
+        function movePacman() {
+            const dirs = [{x:1,y:0}, {x:0,y:-1}, {x:-1,y:0}, {x:0,y:1}];
+            
+            // Thử di chuyển theo hướng mới
+            let nextX = pacman.x + dirs[pacman.nextDir].x;
+            let nextY = pacman.y + dirs[pacman.nextDir].y;
+            
+            if (canMove(nextX, nextY)) {
+                pacman.dir = pacman.nextDir;
+            }
+            
+            // Di chuyển theo hướng hiện tại
+            nextX = pacman.x + dirs[pacman.dir].x;
+            nextY = pacman.y + dirs[pacman.dir].y;
+            
+            if (canMove(nextX, nextY)) {
+                pacman.x = nextX;
+                pacman.y = nextY;
+                
+                // Xử lý tunnel
+                if (pacman.x < 0) pacman.x = COLS - 1;
+                if (pacman.x >= COLS) pacman.x = 0;
+            }
+            
+            pacman.mouth += 0.2;
+        }
+
+        // Di chuyển ma
+        function moveGhost(ghost) {
+            const dirs = [{x:1,y:0}, {x:0,y:-1}, {x:-1,y:0}, {x:0,y:1}];
+            const possibleDirs = [];
+            
+            for (let i = 0; i < 4; i++) {
+                if (i === (ghost.dir + 2) % 4) continue; // Không quay đầu
+                const nextX = ghost.x + dirs[i].x;
+                const nextY = ghost.y + dirs[i].y;
+                if (canMove(nextX, nextY)) {
+                    possibleDirs.push(i);
+                }
+            }
+            
+            if (possibleDirs.length > 0) {
+                if (possibleDirs.length === 1 || Math.random() < 0.7) {
+                    // Đuổi theo Pac-Man
+                    let bestDir = possibleDirs[0];
+                    let bestDist = Infinity;
+                    
+                    possibleDirs.forEach(dir => {
+                        const nextX = ghost.x + dirs[dir].x;
+                        const nextY = ghost.y + dirs[dir].y;
+                        const dist = Math.abs(nextX - pacman.x) + Math.abs(nextY - pacman.y);
+                        
+                        if (powerMode) {
+                            if (dist > bestDist) {
+                                bestDist = dist;
+                                bestDir = dir;
+                            }
+                        } else {
+                            if (dist < bestDist) {
+                                bestDist = dist;
+                                bestDir = dir;
+                            }
+                        }
+                    });
+                    
+                    ghost.dir = bestDir;
+                } else {
+                    ghost.dir = possibleDirs[Math.floor(Math.random() * possibleDirs.length)];
+                }
+            }
+            
+            ghost.x += dirs[ghost.dir].x;
+            ghost.y += dirs[ghost.dir].y;
+            
+            if (ghost.x < 0) ghost.x = COLS - 1;
+            if (ghost.x >= COLS) ghost.x = 0;
+        }
+
+        // Kiểm tra ăn điểm
+        function checkDotCollision() {
+            for (let i = dots.length - 1; i >= 0; i--) {
+                if (dots[i].x === pacman.x && dots[i].y === pacman.y) {
+                    if (dots[i].type === 'small') {
+                        score += 10;
+                    } else {
+                        score += 50;
+                        powerMode = true;
+                        powerModeTimer = 200;
+                    }
+                    dots.splice(i, 1);
+                    scoreDisplay.textContent = 'Điểm: ' + score;
+                }
+            }
+            
+            if (dots.length === 0) {
+                initDots();
+                score += 1000;
+                scoreDisplay.textContent = 'Điểm: ' + score;
+            }
+        }
+
+        // Kiểm tra va chạm với ma
+        function checkGhostCollision() {
+            ghosts.forEach((ghost, index) => {
+                if (ghost.x === pacman.x && ghost.y === pacman.y) {
+                    if (powerMode) {
+                        score += 200;
+                        scoreDisplay.textContent = 'Điểm: ' + score;
+                        ghost.x = 14;
+                        ghost.y = 14;
+                    } else {
+                        gameOver();
+                    }
+                }
+            });
+        }
+
+        // Game over
+        function gameOver() {
+            gameRunning = false;
+            finalScoreSpan.textContent = score;
+            gameOverDiv.style.display = 'block';
+        }
+
+        // Khởi động lại game
+        function restart() {
+            pacman = { x: 14, y: 23, dir: 0, nextDir: 0, mouth: 0 };
+            ghosts = [
+                { x: 14, y: 11, dir: 0, color: '#FF0000', mode: 'scatter' },
+                { x: 12, y: 14, dir: 2, color: '#FFB8FF', mode: 'scatter' },
+                { x: 14, y: 14, dir: 0, color: '#00FFFF', mode: 'scatter' },
+                { x: 16, y: 14, dir: 1, color: '#FFB852', mode: 'scatter' }
+            ];
+            score = 0;
+            powerMode = false;
+            powerModeTimer = 0;
+            gameRunning = true;
+            frameCount = 0;
+            scoreDisplay.textContent = 'Điểm: 0';
+            gameOverDiv.style.display = 'none';
+            initDots();
+            gameLoop(); // Khởi động lại vòng lặp game
+        }
+
+        // Vòng lặp game
+        function gameLoop() {
+            if (!gameRunning) return;
+            
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            drawMap();
+            drawDots();
+            drawPacman();
+            ghosts.forEach(drawGhost);
+            
+            frameCount++;
+            
+            // Di chuyển chỉ khi đủ frame
+            if (frameCount >= speed) {
+                frameCount = 0;
+                movePacman();
+                ghosts.forEach(moveGhost);
+                checkDotCollision();
+                checkGhostCollision();
+            }
+            
+            pacman.mouth += 0.1; // Hiệu ứng há miệng vẫn mượt
+            
+            if (powerMode) {
+                powerModeTimer--;
+                if (powerModeTimer <= 0) {
+                    powerMode = false;
+                }
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Xử lý phím
+        document.addEventListener('keydown', (e) => {
+            switch(e.key) {
+                case 'ArrowRight':
+                case 'd':
+                case 'D':
+                    pacman.nextDir = 0;
+                    e.preventDefault();
+                    break;
+                case 'ArrowUp':
+                case 'w':
+                case 'W':
+                    pacman.nextDir = 1;
+                    e.preventDefault();
+                    break;
+                case 'ArrowLeft':
+                case 'a':
+                case 'A':
+                    pacman.nextDir = 2;
+                    e.preventDefault();
+                    break;
+                case 'ArrowDown':
+                case 's':
+                case 'S':
+                    pacman.nextDir = 3;
+                    e.preventDefault();
+                    break;
+            }
+        });
+
+        restartBtn.addEventListener('click', restart);
+
+        // Khởi động game
+        initDots();
+        gameLoop();
+    </script>
+</body>
+</html>
