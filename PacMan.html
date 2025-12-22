@@ -15,12 +15,25 @@
         const map=[[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
                    [1,0,1,1,0,1,0,1,1,1,0,1,0,1,1,0,1],
-                   [1,0,1,0,0,0,0,0,4,0,0,0,0,0,1,0,1],
+                   [1,0,1,0,0,0,0,0,2,0,0,0,0,0,1,0,1],
                    [1,0,1,0,1,1,1,1,0,1,1,1,1,0,1,0,1],
-                   [1,0,0,0,0,0,0,0,4,0,0,0,0,0,0,0,1],
+                   [1,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,1],
                    [1,0,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1],
                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]];
+                   let speed=169;
+        const gameLoop=setInterval(autoMove,speed);
+        //vị trí ma
+        let ghosts=[
+            {row:3,col:8,color:"pink",dir:"Left",move:"random"},
+            {row:5,col:8,color:"cyan",dir:"right",move:"random"}
+        ];
+        const ghostDir=[
+            {r:-1,c:0},
+            {r:1,c: 0},
+            {r:0,c:-1},
+            {r:0,c: 1}
+        ]
         //lưu vị trí ban đầu của PacMan
         let pacmanRow=7;
         let pacmanCol=8;
@@ -29,7 +42,15 @@
         let mouthEnd =  1.75*Math.PI;
         //điểm
         let score=0;
+        //gameover-win
+        let gameOver= false;
+        let gameWin= false;
+
+
+
+
         function DrawMap(){
+            
             ctx.clearRect(0,0,canvas.width,canvas.height);
             for(let row=0;row<map.length;row++){//dòng
                 for(let col=0;col<map[row].length;col++){//cột
@@ -41,7 +62,7 @@
                         ctx.fillRect(x,y,titleSize,titleSize);
                     }
                     else if(title===0){// food
-                        ctx.fillStyle="yellow";
+                        ctx.fillStyle="navy";
                         ctx.beginPath();
                         ctx.arc(x+titleSize/2,y+titleSize/2,
                             titleSize/8,0,Math.PI*2
@@ -51,19 +72,25 @@
 
                     }
 
-                    else if(title===4){//  2ma                       
-                        ctx.fillStyle= "pink";                        
-                        ctx.beginPath();
-                        ctx.arc(x+titleSize/2,
-                                y+titleSize/2,
-                                10,
-                                0,
-                                Math.PI*2);
-                        ctx.fill();
-                    }    
+                    
                 }
+                 ghosts.forEach(g=>{//  2ma                       
+                        ctx.fillStyle= g.color;                        
+                        ctx.beginPath();
+                        ctx.arc(g.col*titleSize+titleSize/2,
+                                g.row*titleSize+titleSize/2,
+                                15,
+                                0,
+                                Math.PI*2
+                            );
+                        ctx.fill();
+                    }  ); 
+
 
             }
+            
+
+
              ctx.fillStyle="red";//pacman
                         ctx.beginPath();
                         ctx.arc(pacmanCol*titleSize+titleSize/2,
@@ -79,8 +106,27 @@
             ctx.fillStyle="blue";
             ctx.font= "20px Arial";
             ctx.fillText("Điểm:"+score,10,25);
+
+            
         }
         DrawMap();
+
+
+
+
+
+        function startChaseMode(){
+            ghosts.forEach(g=>g.move ="chase");
+            setTimeout(()=>{
+                ghosts.forEach(g=>g.move="random");},2000);
+            }
+            
+        setInterval(startChaseMode,3000);
+
+
+
+
+
         document.addEventListener('keydown',function(e){
             if(e.key=="ArrowUp"||e.key==="w"||e.key==="W"){
                 direction = "up";
@@ -102,11 +148,117 @@
                  mouthStart = 0.25*Math.PI;
                  mouthEnd =  1.75*Math.PI;
             }
+            if(e.key=="r"||e.key=="R"){
+                location.reload();
+            }
+            if (gameOver) return;
         });
+
+
+
+        function moveGhosts(){
+    ghosts.forEach(g=>{
+        let choices=[];
+
+        ghostDir.forEach(d=>{
+            let nr = g.row+d.r;
+            let nc = g.col+d.c;
+
+            if(nr>=0 && nr<map.length &&
+               nc>=0 && nc<map[0].length &&
+               map[nr][nc]!==1){
+                let dist = Math.abs(pacmanRow-nr) + Math.abs(pacmanCol-nc);
+                choices.push({row:nr,col:nc,dist});
+            }
+        });
+
+        if(choices.length===0) return;
+
+        if(g.move==="chase"){
+            choices.sort((a,b)=>a.dist-b.dist);
+            g.row = choices[0].row;
+            g.col = choices[0].col;
+        }else{
+            choices.sort((a,b)=>a.dist-b.dist);
+            let pick = choices[Math.floor(Math.random()*Math.min(2,choices.length))];
+            g.row = pick.row;
+            g.col = pick.col;
+        }
+
+        if(g.row===pacmanRow && g.col===pacmanCol){
+            gameOver=true;
+            clearInterval(gameLoop);
+            
+            drawGameOver();
+        }
+    });
+
+    DrawMap(); 
+}
+        let w=canvas.width;
+        let h=canvas.height;
+        function drawGameOver(){
+            ctx.fillStyle = "rgba(0,0,0,0.7)";
+            ctx.fillRect(0,0,w,h);
+
+            ctx.textAlign ="center";//cân bằng chữ
+            ctx.textBaseline="middle";
+
+            ctx.fillStyle="red";
+            ctx.font="50px Arial";
+            ctx.fillText("Bạn quá ngu để chơi trò này",w/2,h/2-40);
+
+            ctx.fillStyle="white";
+            ctx.font="25px Arial";
+            ctx.fillText("Nhấn R để chơi lại",w/2,h/2+30);
+
+        }
+
+
+
+
+
+        function showWin(){
+            ctx.fillStyle = "rgba(0,0,0,0.7)";
+            ctx.fillRect(0,0,w,h);
+
+            ctx.textAlign ="center";//cân bằng chữ
+            ctx.textBaseline="middle";
+
+            ctx.fillStyle="red";
+            ctx.font="50px Arial";
+            ctx.fillText("YOU WIN",w/2,h/2-40);
+
+            ctx.fillStyle="white";
+            ctx.font="25px Arial";
+            ctx.fillText("Nhấn R để chơi lại",w/2,h/2+30);
+
+        }
+
+
+
+
+
+        function checkWin(){
+            for(let row=0;row<map.length;row++){
+                for(let col=0;col<map[row].length;col++){
+                    if(map[row][col]===0){
+                        return false;//còn food
+                    }
+                }
+                
+            }
+            return true;
+        }
+
+
+
+
 
         let direction = "right";
         
         function movePacman(newRow, newCol){
+            if(gameOver) return;
             if(newRow >=0 &&
                 newRow<map.length &&
                 newCol>=0 &&
@@ -116,17 +268,42 @@
                 pacmanCol=newCol;
                 pacmanRow=newRow;
             }
+            for(let g of ghosts){//check va chạm vs ma
+                if(g.row===pacmanRow && g.col===pacmanCol){
+                    gameOver = true;
+                    clearInterval(gameLoop);
+                    DrawMap();
+                    drawGameOver();
+                    return;
+                }
+            }
+            
              if(map[pacmanRow][pacmanCol]===0){//ăn food
                 map[pacmanRow][pacmanCol]=2;
                 score+=10;
+                if(checkWin()){
+                gameWin=true;
+                clearInterval(gameLoop);
+                showWin();
+                return;
+            }
 
             }
             
+            
+            
             DrawMap();
         }
+
+
+
+
+
         function autoMove(){
+            
             let newCol=pacmanCol;
             let newRow=pacmanRow;
+            if(gameOver||gameWin) return;
             
             if(direction === "up"){
                 newRow--;
@@ -138,7 +315,8 @@
                 newCol++;
             }
             movePacman(newRow,newCol);
-        }setInterval(autoMove,300);
+            moveGhosts();}
+        
     </script>
 </body>
 </html>
