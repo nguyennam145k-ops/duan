@@ -4,7 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pac-Man game</title>
-    
+    <style>
+        body{
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgb(150, 150, 46);
+        }
+        canvas{
+            border: 2px solid black;
+            background: lightyellow;
+            box-shadow: 0 0 20px rgb(226, 226, 99);
+        }
+    </style>
 </head>
 <body>
     <canvas id="gameCanvas" width="800" height="600"></canvas>
@@ -12,16 +26,22 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const titleSize = 40;//khoảng cách ô
-        const map=[[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-                   [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                   [1,0,1,1,0,1,0,1,1,1,0,1,0,1,1,0,1],
-                   [1,0,1,0,0,0,0,0,2,0,0,0,0,0,1,0,1],
-                   [1,0,1,0,1,1,1,1,0,1,1,1,1,0,1,0,1],
-                   [1,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,1],
-                   [1,0,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1],
-                   [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                   [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]];
-                   let speed=169;
+        const map=[[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                   [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+                   [1,0,1,1,0,1,0,1,1,1,0,1,0,1,1,0,1,0,0,1],
+                   [1,0,1,0,0,0,0,0,2,0,0,0,0,0,1,0,1,1,0,1],
+                   [1,0,1,0,1,1,1,1,0,1,1,1,1,0,1,0,0,1,0,1],
+                   [1,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,1],
+                   [1,0,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,0,1],
+                   [1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                   [1,0,1,1,0,0,0,1,0,0,0,1,1,0,0,1,0,0,1,1],
+                   [1,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,1],
+                   [1,0,0,0,0,0,0,0,0,0,0,1,0,0,1,1,0,1,0,1],
+                   [1,0,1,0,0,1,0,1,1,1,0,1,1,0,1,0,0,1,0,1],
+                   [1,0,1,1,0,1,0,0,0,0,0,0,1,0,0,0,1,1,0,1],
+                   [1,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,1],
+                   [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]];
+                   let speed=150;
         const gameLoop=setInterval(autoMove,speed);
         //vị trí ma
         let ghosts=[
@@ -173,19 +193,21 @@
         });
 
         if(choices.length===0) return;
+        let pick;
 
         if(g.move==="chase"){
             choices.sort((a,b)=>a.dist-b.dist);
-            g.row = choices[0].row;
-            g.col = choices[0].col;
+            pick = choices[0];
+            
         }else{
-            choices.sort((a,b)=>a.dist-b.dist);
-            let pick = choices[Math.floor(Math.random()*Math.min(2,choices.length))];
-            g.row = pick.row;
-            g.col = pick.col;
+            choices.sort((a,b)=>b.dist-a.dist);
+             pick = choices[Math.floor(Math.random()*Math.min(2,choices.length))];
+            
         }
+        g.row = pick.row;
+        g.col = pick.col;
 
-        if(g.row===pacmanRow && g.col===pacmanCol){
+        if(g.row===pacmanRow && g.col===pacmanCol){//check var chạm :))
             gameOver=true;
             clearInterval(gameLoop);
             
@@ -193,7 +215,7 @@
         }
     });
 
-    DrawMap(); 
+   
 }
         let w=canvas.width;
         let h=canvas.height;
@@ -206,7 +228,7 @@
 
             ctx.fillStyle="red";
             ctx.font="50px Arial";
-            ctx.fillText("Bạn quá ngu để chơi trò này",w/2,h/2-40);
+            ctx.fillText("Hơi non",w/2,h/2-40);
 
             ctx.fillStyle="white";
             ctx.font="25px Arial";
@@ -315,7 +337,8 @@
                 newCol++;
             }
             movePacman(newRow,newCol);
-            moveGhosts();}
+            if(!gameOver && !gameWin){
+            moveGhosts();}}
         
     </script>
 </body>
