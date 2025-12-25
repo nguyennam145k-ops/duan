@@ -15,7 +15,7 @@
         }
         canvas{
             border: 2px solid rgb(255, 255, 255);
-            background: rgb(145, 137, 91);
+            background: rgb(188, 176, 102);
         
         }
     </style>
@@ -69,7 +69,7 @@
 
 
 
-        function DrawMap(){
+        function DrawMap(){ // vẽ
             
             ctx.clearRect(0,0,canvas.width,canvas.height);
             for(let row=0;row<map.length;row++){//dòng
@@ -89,7 +89,6 @@
                         );
                         ctx.fill();
                     }else if(title===2){
-
                     }
 
                     
@@ -128,7 +127,7 @@
             ctx.fillText("Điểm:"+score,10,25);
 
             
-        }
+        }//dùng context để vẽ
         DrawMap();
 
 
@@ -147,7 +146,7 @@
 
 
 
-        document.addEventListener('keydown',function(e){
+        document.addEventListener('keydown',function(e){//điều khiển
             if(e.key=="ArrowUp"||e.key==="w"||e.key==="W"){
                 direction = "up";
                 mouthStart = 1.75*Math.PI;
@@ -219,6 +218,8 @@
 }
         let w=canvas.width;
         let h=canvas.height;
+
+
         function drawGameOver(){
             ctx.fillStyle = "rgba(0,0,0,0.7)";
             ctx.fillRect(0,0,w,h);
@@ -228,7 +229,7 @@
 
             ctx.fillStyle="red";
             ctx.font="50px Arial";
-            ctx.fillText("Hơi non",w/2,h/2-40);
+            ctx.fillText("GAME OVER",w/2,h/2-40);
 
             ctx.fillStyle="white";
             ctx.font="25px Arial";
