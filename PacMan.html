@@ -41,6 +41,8 @@
                    [1,0,1,1,0,1,0,0,0,0,0,0,1,0,0,0,1,1,0,1],
                    [1,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,1],
                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]];
+
+
                    let speed=150;
         const gameLoop=setInterval(autoMove,speed);
         //vị trí ma
@@ -48,7 +50,8 @@
             {row:3,col:8,color:"pink",dir:"Left",move:"random"},
             {row:5,col:8,color:"cyan",dir:"right",move:"random"}
         ];
-        const ghostDir=[
+        const ghostDir=[// hướng di chuyển thay đổi của ma
+
             {r:-1,c:0},
             {r:1,c: 0},
             {r:0,c:-1},
@@ -127,14 +130,14 @@
             ctx.fillText("Điểm:"+score,10,25);
 
             
-        }//dùng context để vẽ
+        }
         DrawMap();
 
 
 
 
 
-        function startChaseMode(){
+        function startChaseMode(){//ma đuổi ngẫu nhiên trong 1 khoảng thời gian
             ghosts.forEach(g=>g.move ="chase");
             setTimeout(()=>{
                 ghosts.forEach(g=>g.move="random");},2000);
@@ -175,7 +178,7 @@
 
 
 
-        function moveGhosts(){
+        function moveGhosts(){// di chuyển ma
     ghosts.forEach(g=>{
         let choices=[];
 
@@ -192,7 +195,7 @@
         });
 
         if(choices.length===0) return;
-        let pick;
+        let pick;// chọn hướng đi
 
         if(g.move==="chase"){
             choices.sort((a,b)=>a.dist-b.dist);
@@ -220,11 +223,11 @@
         let h=canvas.height;
 
 
-        function drawGameOver(){
+        function drawGameOver(){// in ra thua
             ctx.fillStyle = "rgba(0,0,0,0.7)";
             ctx.fillRect(0,0,w,h);
 
-            ctx.textAlign ="center";//cân bằng chữ
+            ctx.textAlign ="center";
             ctx.textBaseline="middle";
 
             ctx.fillStyle="red";
@@ -241,11 +244,11 @@
 
 
 
-        function showWin(){
+        function showWin(){//in ra win
             ctx.fillStyle = "rgba(0,0,0,0.7)";
             ctx.fillRect(0,0,w,h);
 
-            ctx.textAlign ="center";//cân bằng chữ
+            ctx.textAlign ="center";
             ctx.textBaseline="middle";
 
             ctx.fillStyle="red";
@@ -262,7 +265,7 @@
 
 
 
-        function checkWin(){
+        function checkWin(){//kiểm tra
             for(let row=0;row<map.length;row++){
                 for(let col=0;col<map[row].length;col++){
                     if(map[row][col]===0){
@@ -278,7 +281,7 @@
 
 
 
-        let direction = "right";
+        let direction = "right";// hướng di chuyển đầu
         
         function movePacman(newRow, newCol){
             if(gameOver) return;
@@ -322,7 +325,7 @@
 
 
 
-        function autoMove(){
+        function autoMove(){// tự động di chuyển
             
             let newCol=pacmanCol;
             let newRow=pacmanRow;
